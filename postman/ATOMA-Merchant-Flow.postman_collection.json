@@ -1,0 +1,594 @@
+{
+  "info": {
+    "_postman_id": "atoma-merchant-flow-2026",
+    "name": "ATOMA Marketplace — Full Merchant Flow",
+    "description": "Run folder **Full Merchant Flow (run in order)** with Collection Runner.\n\nPrerequisite: seed admin — see postman/README.md (`scripts/seed-postman-admin.sql`).\n\nDefault admin: admin@postman.local / Password1!",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8090" },
+    { "key": "adminEmail", "value": "admin@postman.local" },
+    { "key": "adminPassword", "value": "Password1!" },
+    { "key": "runId", "value": "" },
+    { "key": "merchantEmail", "value": "" },
+    { "key": "customerEmail", "value": "" },
+    { "key": "merchantPhone", "value": "" },
+    { "key": "customerPhone", "value": "" },
+    { "key": "merchantToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "customerToken", "value": "" },
+    { "key": "merchantId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "orderId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Full Merchant Flow (run in order)",
+      "item": [
+        {
+          "name": "01 Init run variables",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const runId = pm.variables.replaceIn('{{$randomUUID}}');",
+                  "pm.collectionVariables.set('runId', runId);",
+                  "const short = runId.replace(/-/g, '').substring(0, 8);",
+                  "pm.collectionVariables.set('merchantEmail', 'merchant-' + runId + '@postman.test');",
+                  "pm.collectionVariables.set('customerEmail', 'customer-' + runId + '@postman.test');",
+                  "pm.collectionVariables.set('merchantPhone', '+9779801' + short);",
+                  "pm.collectionVariables.set('customerPhone', '+9779802' + short);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API is up', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/health"
+          }
+        },
+        {
+          "name": "02 Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Admin login OK', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('adminToken', json.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "03 Register Merchant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Merchant registered', function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('merchantToken', json.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{merchantEmail}}\",\n  \"phone\": \"{{merchantPhone}}\",\n  \"password\": \"Password1!\",\n  \"firstName\": \"Demo\",\n  \"lastName\": \"Merchant\",\n  \"roles\": [\"MERCHANT\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "04 Merchant Onboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Onboard created', function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('merchantId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Postman Demo Shop\",\n  \"description\": \"UAT merchant from Postman\",\n  \"tinNumber\": \"TIN-POSTMAN-001\",\n  \"businessLicenseNumber\": \"LIC-POSTMAN-001\",\n  \"latitude\": 27.7172,\n  \"longitude\": 85.3240,\n  \"address\": \"123 Thamel, Kathmandu\",\n  \"city\": \"Kathmandu\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/onboard"
+          }
+        },
+        {
+          "name": "05 KYC — BUSINESS_LICENSE",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"BUSINESS_LICENSE\",\n  \"fileUrl\": \"https://files.example/postman/business-license.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/kyc/documents"
+          }
+        },
+        {
+          "name": "06 KYC — TIN",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"TIN\",\n  \"fileUrl\": \"https://files.example/postman/tin.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/kyc/documents"
+          }
+        },
+        {
+          "name": "07 KYC — NIC",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"NIC\",\n  \"fileUrl\": \"https://files.example/postman/nic.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/kyc/documents"
+          }
+        },
+        {
+          "name": "08 KYC — UTILITY_BILL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('KYC submitted', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": \"UTILITY_BILL\",\n  \"fileUrl\": \"https://files.example/postman/utility.pdf\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/kyc/documents"
+          }
+        },
+        {
+          "name": "09 List KYC documents",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/merchant/kyc/documents"
+          }
+        },
+        {
+          "name": "10 Admin Verify Merchant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Merchant verified', function () { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().status).to.eql('VERIFIED');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/merchants/{{merchantId}}/verify?approved=true&notes=Approved+via+Postman",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "merchants", "{{merchantId}}", "verify"],
+              "query": [
+                { "key": "approved", "value": "true" },
+                { "key": "notes", "value": "Approved via Postman" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "11 Admin Create Category",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const runId = pm.collectionVariables.get('runId');",
+                  "pm.variables.set('categoryName', 'Postman-Cat-' + runId.substring(0, 8));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Category created', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('categoryId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{categoryName}}\",\n  \"description\": \"Category for Postman merchant flow\",\n  \"parentId\": null,\n  \"sortOrder\": 1,\n  \"commissionRate\": 5.00\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          }
+        },
+        {
+          "name": "12 Merchant Create Product",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const runId = pm.collectionVariables.get('runId');",
+                  "pm.variables.set('productSku', 'SKU-' + runId.replace(/-/g,'').substring(0, 12));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Product created', function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set('productId', pm.response.json().id);",
+                  "pm.expect(pm.response.json().status).to.eql('PENDING_APPROVAL');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Postman Rice 5kg\",\n  \"description\": \"Premium rice for UAT\",\n  \"sku\": \"{{productSku}}\",\n  \"price\": 500.00,\n  \"compareAtPrice\": 550.00,\n  \"stockQuantity\": 100,\n  \"brand\": \"Local\",\n  \"imageUrls\": [\"https://cdn.example/postman/rice.png\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/products"
+          }
+        },
+        {
+          "name": "13 Admin Approve Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Product active', function () { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().status).to.eql('ACTIVE');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/products/{{productId}}/approve?approved=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "products", "{{productId}}", "approve"],
+              "query": [{ "key": "approved", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "14 Register Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Customer registered', function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set('customerToken', pm.response.json().accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{customerEmail}}\",\n  \"phone\": \"{{customerPhone}}\",\n  \"password\": \"Password1!\",\n  \"firstName\": \"Demo\",\n  \"lastName\": \"Customer\",\n  \"roles\": [\"CUSTOMER\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "15 Customer Add to Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Added to cart', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"variantLabel\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/customer/cart/items"
+          }
+        },
+        {
+          "name": "16 Customer Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Order created', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('orderId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryAddress\": \"456 Customer Street, Kathmandu\",\n  \"couponCode\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/customer/checkout"
+          }
+        },
+        {
+          "name": "17 Customer Pay (Wallet stub)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Payment OK', function () { pm.response.to.have.status(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{customerToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/customer/orders/{{orderId}}/pay"
+          }
+        },
+        {
+          "name": "18 Merchant List Orders",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/merchant/orders"
+          }
+        },
+        {
+          "name": "19 Merchant Mark SHIPPED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Shipped', function () { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().status).to.eql('SHIPPED');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\",\n  \"trackingNumber\": \"TRACK-POSTMAN-001\",\n  \"courierName\": \"DHL\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/orders/{{orderId}}/status"
+          }
+        },
+        {
+          "name": "20 Merchant Mark DELIVERED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Delivered', function () { pm.response.to.have.status(200); });",
+                  "pm.expect(pm.response.json().status).to.eql('DELIVERED');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DELIVERED\",\n  \"trackingNumber\": null,\n  \"courierName\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/merchant/orders/{{orderId}}/status"
+          }
+        },
+        {
+          "name": "21 Merchant Settlements",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Settlements loaded', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "if (body.content && body.content.length > 0) {",
+                  "  pm.expect(body.content[0].status).to.eql('COMPLETED');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/merchant/settlements"
+          }
+        },
+        {
+          "name": "22 Merchant Analytics Dashboard",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/merchant/analytics/dashboard"
+          }
+        },
+        {
+          "name": "23 Merchant Notifications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/merchant/notifications"
+          }
+        },
+        {
+          "name": "24 Merchant Profile (final)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{merchantToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/merchant/profile"
+          }
+        }
+      ]
+    }
+  ]
+}
