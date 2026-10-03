@@ -2,8 +2,12 @@ package com.atoma.marketplace.merchant.entity;
 
 import com.atoma.marketplace.auth.entity.User;
 import com.atoma.marketplace.common.entity.BaseEntity;
+import com.atoma.marketplace.common.enums.ApplicationWorkflowStatus;
+import com.atoma.marketplace.common.enums.BusinessType;
 import com.atoma.marketplace.common.enums.KycStatus;
 import com.atoma.marketplace.common.enums.MerchantStatus;
+import com.atoma.marketplace.common.enums.PayoutMethod;
+import com.atoma.marketplace.common.enums.RepresentativeRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +23,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "merchants")
@@ -75,4 +81,74 @@ public class Merchant extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private boolean provisionalActive = false;
+
+    @Column(length = 20, unique = true)
+    private String applicationNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private ApplicationWorkflowStatus applicationWorkflowStatus;
+
+    @Builder.Default
+    private int currentWizardStep = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private BusinessType businessType;
+
+    @Column(length = 100)
+    private String mainCategory;
+
+    @Column(name = "primary_category_id")
+    private UUID primaryCategoryId;
+
+    @Builder.Default
+    @Column(name = "application_version", nullable = false)
+    private long applicationVersion = 0L;
+
+    @Column(length = 200)
+    private String ownerFullName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private RepresentativeRole representativeRole;
+
+    @Column(length = 120)
+    private String ownerEmail;
+
+    @Column(length = 100)
+    private String buildingNumber;
+
+    @Column(length = 200)
+    private String street;
+
+    @Column(length = 100)
+    private String district;
+
+    @Column(length = 200)
+    private String landmark;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private PayoutMethod payoutMethod;
+
+    @Column(length = 100)
+    private String bankAccountHint;
+
+    private Instant fixByDeadline;
+
+    private Instant reapplyAfter;
+
+    @Column(length = 30)
+    private String decisionReference;
+
+    @Column(length = 1000)
+    private String suspensionReason;
+
+    private Instant submittedAt;
+
+    private Instant draftSavedAt;
+
+    @Builder.Default
+    private boolean phoneVerified = false;
 }

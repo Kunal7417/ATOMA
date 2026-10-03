@@ -1,9 +1,11 @@
 package com.atoma.marketplace.auth.dto;
 
+import com.atoma.marketplace.common.enums.OtpChannel;
 import com.atoma.marketplace.common.enums.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Value;
@@ -36,4 +38,32 @@ public class AuthDtos {
             @NotBlank @Email String email,
             @NotBlank String password
     ) {}
+
+    public record OtpSendRequest(
+            @NotNull OtpChannel channel,
+            @NotBlank String identifier
+    ) {}
+
+    public record OtpVerifyRequest(
+            @NotNull OtpChannel channel,
+            @NotBlank String identifier,
+            @NotBlank String code
+    ) {}
+
+    /** Supports mobile verify (requestId) and legacy verify (channel + identifier). */
+    public record OtpVerifyBody(
+            UUID requestId,
+            @NotBlank String code,
+            MerchantAuthDtos.DeviceInfo device,
+            OtpChannel channel,
+            String identifier
+    ) {}
+
+    @Value
+    @Builder
+    public static class OtpSendResponse {
+        String message;
+        int expiresInSeconds;
+        String devCode;
+    }
 }

@@ -21,7 +21,15 @@ public class GlobalExceptionHandler {
             MarketplaceException ex,
             HttpServletRequest request
     ) {
-        return buildResponse(ex.getStatus(), ex.getCode(), ex.getMessage(), request.getRequestURI(), null);
+        return buildResponse(
+                ex.getStatus(),
+                ex.getCode(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                null,
+                ex.getRetryAfterSeconds(),
+                ex.getAttemptsRemaining()
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -31,8 +39,15 @@ public class GlobalExceptionHandler {
     ) {
         var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a));
-        return buildResponse(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Validation failed",
-                request.getRequestURI(), fieldErrors);
+        return buildResponse(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ErrorCodes.VALIDATION_FAILED,
+                "Validation failed",
+                request.getRequestURI(),
+                fieldErrors,
+                null,
+                null
+        );
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -40,8 +55,8 @@ public class GlobalExceptionHandler {
             BadCredentialsException ex,
             HttpServletRequest request
     ) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", ex.getMessage(),
-                request.getRequestURI(), null);
+        return buildResponse(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED, ex.getMessage(),
+                request.getRequestURI(), null, null, null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -50,13 +65,13 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(),
-                request.getRequestURI(), null);
+                request.getRequestURI(), null, null, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", ex.getMessage(),
-                request.getRequestURI(), null);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCodes.INTERNAL_ERROR, ex.getMessage(),
+                request.getRequestURI(), null, null, null);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(
@@ -64,7 +79,9 @@ public class GlobalExceptionHandler {
             String code,
             String message,
             String path,
-            java.util.Map<String, String> fieldErrors
+            java.util.Map<String, String> fieldErrors,
+            Long retryAfter,
+            Integer attemptsRemaining
     ) {
         var body = ErrorResponse.builder()
                 .timestamp(Instant.now())
@@ -73,6 +90,8 @@ public class GlobalExceptionHandler {
                 .message(message)
                 .path(path)
                 .fieldErrors(fieldErrors)
+                .retryAfter(retryAfter)
+                .attemptsRemaining(attemptsRemaining)
                 .build();
         return ResponseEntity.status(status).body(body);
     }

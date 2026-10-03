@@ -15,4 +15,8 @@ public class ErrorResponse {
     String message;
     String path;
     Map<String, String> fieldErrors;
+    /** Seconds until client may retry (rate limit / resend cooldown). */
+    Long retryAfter;
+    /** Wrong OTP attempts remaining, when applicable. */
+    Integer attemptsRemaining;
 }

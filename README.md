@@ -46,6 +46,22 @@ src/main/java/com/atoma/marketplace/
 - JDK 17+
 - Gradle (wrapper included)
 
+### Merchant sign-in & onboarding (mobile 9 steps)
+
+1. `POST /api/v1/auth/otp/request` — send code  
+2. `POST /api/v1/auth/otp/resend` — resend (`requestId`)  
+3. `POST /api/v1/auth/otp/verify` — verify + tokens  
+4. `POST /api/v1/auth/refresh` — refresh tokens  
+5. `POST /api/v1/auth/logout` — logout  
+6. `GET /api/v1/onboarding/config` — onboarding config  
+7. `GET /api/v1/onboarding/application` — load draft  
+8. `PATCH /api/v1/onboarding/application/business` — save draft  
+9. `POST /api/v1/onboarding/application/business/submit` — continue (+ `Idempotency-Key`)
+
+Also: legacy `POST /api/v1/auth/otp/send`, wizard `PUT /api/v1/merchant/onboarding/wizard/step`, admin `PUT /api/v1/admin/merchants/{id}/application/review`.
+
+PostgreSQL: Flyway `V3` + `V4` with `-Pprofile=local`. Postman: `postman/Atoma-Merchant-Mobile-API.postman_collection.json`.
+
 ### Run locally (H2 in-memory)
 
 ```bash

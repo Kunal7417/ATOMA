@@ -14,4 +14,6 @@ public interface MerchantRepository extends JpaRepository<Merchant, UUID> {
     Optional<Merchant> findByOwnerId(UUID ownerId);
 
     Page<Merchant> findByStatus(MerchantStatus status, Pageable pageable);
+
+    Optional<Merchant> findByApplicationNumber(String applicationNumber);
 }

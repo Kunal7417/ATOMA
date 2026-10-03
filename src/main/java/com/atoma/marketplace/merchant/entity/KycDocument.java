@@ -16,6 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "kyc_documents")
 @Getter
@@ -41,4 +43,9 @@ public class KycDocument extends BaseEntity {
 
     @Column(length = 500)
     private String reviewNotes;
+
+    @Column(length = 100)
+    private String documentNumber;
+
+    private LocalDate expiryDate;
 }

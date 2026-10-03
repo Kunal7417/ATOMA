@@ -4,12 +4,15 @@ import java.util.Set;
 
 public enum KycDocumentType {
     BUSINESS_LICENSE,
+    OWNER_TAZKIRA,
     TIN,
+    @Deprecated
     NIC,
+    @Deprecated
     UTILITY_BILL;
 
     public static final Set<KycDocumentType> REQUIRED_FOR_SUBMISSION = Set.of(
-            BUSINESS_LICENSE, TIN, NIC, UTILITY_BILL
+            BUSINESS_LICENSE, OWNER_TAZKIRA, TIN
     );
 
     public static KycDocumentType fromString(String value) {

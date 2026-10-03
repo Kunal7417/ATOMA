@@ -112,7 +112,9 @@ class MerchantFlowIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(new MerchantDtos.KycDocumentRequest(
                                     type.name(),
-                                    "https://files.example/" + type.name().toLowerCase() + ".pdf"
+                                    "https://files.example/" + type.name().toLowerCase() + ".pdf",
+                                    "DOC-" + type.name(),
+                                    java.time.LocalDate.of(2027, 3, 2)
                             ))))
                     .andExpect(status().isOk());
         }

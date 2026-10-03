@@ -2,6 +2,7 @@ package com.atoma.marketplace.merchant.service;
 
 import com.atoma.marketplace.auth.repository.UserRepository;
 import com.atoma.marketplace.auth.security.SecurityUtils;
+import com.atoma.marketplace.common.enums.ApplicationWorkflowStatus;
 import com.atoma.marketplace.common.enums.KycDocumentType;
 import com.atoma.marketplace.common.enums.KycStatus;
 import com.atoma.marketplace.common.enums.MerchantStatus;
@@ -73,13 +74,26 @@ public class MerchantService {
             throw MarketplaceException.badRequest(ex.getMessage());
         }
 
-        var document = KycDocument.builder()
-                .merchant(merchant)
-                .documentType(documentType.name())
-                .fileUrl(request.fileUrl())
-                .reviewStatus(KycStatus.SUBMITTED)
-                .build();
-        kycDocumentRepository.save(document);
+        var existing = kycDocumentRepository.findByMerchantId(merchant.getId()).stream()
+                .filter(d -> d.getDocumentType().equalsIgnoreCase(documentType.name()))
+                .findFirst();
+        if (existing.isPresent()) {
+            var document = existing.get();
+            document.setFileUrl(request.fileUrl());
+            document.setDocumentNumber(request.documentNumber());
+            document.setExpiryDate(request.expiryDate());
+            document.setReviewStatus(KycStatus.SUBMITTED);
+            kycDocumentRepository.save(document);
+        } else {
+            kycDocumentRepository.save(KycDocument.builder()
+                    .merchant(merchant)
+                    .documentType(documentType.name())
+                    .fileUrl(request.fileUrl())
+                    .documentNumber(request.documentNumber())
+                    .expiryDate(request.expiryDate())
+                    .reviewStatus(KycStatus.SUBMITTED)
+                    .build());
+        }
 
         merchant.setKycStatus(KycStatus.SUBMITTED);
         merchant.setStatus(MerchantStatus.PENDING_KYC);
@@ -126,11 +140,13 @@ public class MerchantService {
             merchant.setStatus(MerchantStatus.VERIFIED);
             merchant.setKycStatus(KycStatus.APPROVED);
             merchant.setProvisionalActive(true);
+            merchant.setApplicationWorkflowStatus(ApplicationWorkflowStatus.APPROVED);
             notificationService.notifyKycApproved(merchant);
         } else {
             merchant.setStatus(MerchantStatus.REJECTED);
             merchant.setKycStatus(KycStatus.REJECTED);
             merchant.setProvisionalActive(false);
+            merchant.setApplicationWorkflowStatus(ApplicationWorkflowStatus.REJECTED);
             notificationService.notifyKycRejected(merchant, notes);
         }
 

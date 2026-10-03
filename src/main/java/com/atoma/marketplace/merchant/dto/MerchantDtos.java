@@ -24,7 +24,9 @@ public class MerchantDtos {
 
     public record KycDocumentRequest(
             @NotBlank String documentType,
-            @NotBlank String fileUrl
+            @NotBlank String fileUrl,
+            String documentNumber,
+            java.time.LocalDate expiryDate
     ) {}
 
     @Value

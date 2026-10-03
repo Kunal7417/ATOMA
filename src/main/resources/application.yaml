@@ -11,6 +11,15 @@ atoma:
   security:
     jwt-secret: ${JWT_SECRET:atoma-marketplace-dev-secret-key-min-256-bits-long!!}
     jwt-expiration-ms: 86400000
+  otp:
+    expose-code: false
+    dev-bypass-code: "000000"
+    resend-cooldown-seconds: 60
+    ttl-minutes: 5
+    max-wrong-attempts: 5
+  app:
+    min-merchant-version: "1.0.0"
+    enforce-version-header: false
 
 springdoc:
   api-docs:

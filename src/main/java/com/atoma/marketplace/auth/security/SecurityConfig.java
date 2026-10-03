@@ -1,5 +1,6 @@
 package com.atoma.marketplace.auth.security;
 
+import com.atoma.marketplace.config.MinAppVersionFilter;
 import com.atoma.marketplace.config.SecurityProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final MinAppVersionFilter minAppVersionFilter;
     private final MarketplaceUserDetailsService userDetailsService;
     private final SecurityProperties securityProperties;
 
@@ -34,14 +36,17 @@ public class SecurityConfig {
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
                         .requestMatchers(securityProperties.getPublicPaths()).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPPORT")
                         .requestMatchers("/api/v1/merchant/**").hasAnyRole("MERCHANT", "ADMIN")
+                        .requestMatchers("/api/v1/onboarding/**").hasAnyRole("MERCHANT", "ADMIN")
                         .requestMatchers("/api/v1/customer/**").hasAnyRole("CUSTOMER", "ADMIN")
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(minAppVersionFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

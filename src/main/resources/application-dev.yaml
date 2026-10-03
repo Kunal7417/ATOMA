@@ -30,3 +30,7 @@ spring:
 logging:
   level:
     com.atoma.marketplace: DEBUG
+
+atoma:
+  otp:
+    expose-code: true

@@ -10,6 +10,8 @@ import com.atoma.marketplace.common.enums.MerchantStatus;
 import com.atoma.marketplace.compliance.entity.AuditLog;
 import com.atoma.marketplace.compliance.entity.Dispute;
 import com.atoma.marketplace.merchant.dto.MerchantDtos;
+import com.atoma.marketplace.merchant.dto.OnboardingDtos;
+import com.atoma.marketplace.merchant.service.MerchantOnboardingService;
 import com.atoma.marketplace.merchant.service.MerchantService;
 import com.atoma.marketplace.product.dto.ProductDtos;
 import com.atoma.marketplace.product.service.ProductService;
@@ -37,6 +39,7 @@ import java.util.UUID;
 public class AdminController {
 
     private final MerchantService merchantService;
+    private final MerchantOnboardingService merchantOnboardingService;
     private final ProductService productService;
     private final AdminService adminService;
     private final AnalyticsService analyticsService;
@@ -58,6 +61,24 @@ public class AdminController {
             @RequestParam(required = false) String notes
     ) {
         return merchantService.verifyMerchant(merchantId, approved, notes);
+    }
+
+    @PutMapping("/merchants/{merchantId}/application/review")
+    @Operation(summary = "Merchant V2 application review (approve, reject, request updates)")
+    public OnboardingDtos.ApplicationStatusResponse reviewApplication(
+            @PathVariable UUID merchantId,
+            @Valid @RequestBody OnboardingDtos.AdminApplicationReviewRequest request
+    ) {
+        return merchantOnboardingService.adminReview(merchantId, request);
+    }
+
+    @PutMapping("/merchants/{merchantId}/suspend")
+    @Operation(summary = "Suspend merchant (e.g. expired licence)")
+    public OnboardingDtos.ApplicationStatusResponse suspendMerchant(
+            @PathVariable UUID merchantId,
+            @Valid @RequestBody OnboardingDtos.SuspendMerchantRequest request
+    ) {
+        return merchantOnboardingService.suspendMerchant(merchantId, request);
     }
 
     @PutMapping("/products/{productId}/approve")

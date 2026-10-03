@@ -1,6 +1,11 @@
 # Local development against PostgreSQL (Docker Compose or native install).
-# Start DB: docker compose up -d postgres
-# Run app:  ./gradlew bootRun -Pprofile=local
+#
+# REQUIRED: Postgres must be listening before bootRun, or Flyway fails with
+# "Connection to localhost:5432 refused" and JPA will not start.
+#
+#   docker compose up -d postgres
+#   docker compose ps postgres   # wait until healthy
+#   ./gradlew bootRun -Pprofile=local
 spring:
   docker:
     compose:
