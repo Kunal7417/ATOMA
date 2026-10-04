@@ -27,6 +27,9 @@ public class IdempotencyRecord extends BaseEntity {
     @Column(name = "response_body", nullable = false, columnDefinition = "TEXT")
     private String responseBody;
 
+    @Column(name = "request_body_hash", length = 64)
+    private String requestBodyHash;
+
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 }

@@ -101,7 +101,7 @@ class MerchantOnboardingV2IntegrationTest {
 
         saveStep(token, 5, new OnboardingDtos.WizardStepRequest(
                 5, null, null, null, null,
-                new OnboardingDtos.PayoutStepRequest(PayoutMethod.ATOMA_WALLET, null),
+                new OnboardingDtos.PayoutStepRequest(PayoutMethod.WALLET, null),
                 null));
 
         saveStep(token, 6, new OnboardingDtos.WizardStepRequest(

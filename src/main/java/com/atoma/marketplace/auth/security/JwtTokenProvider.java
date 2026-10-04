@@ -19,8 +19,16 @@ public class JwtTokenProvider {
     private final SecurityProperties securityProperties;
 
     public String generateToken(MarketplaceUserDetails userDetails) {
+        return generateToken(userDetails, securityProperties.getJwtExpirationMs());
+    }
+
+    public String generateMerchantAccessToken(MarketplaceUserDetails userDetails) {
+        return generateToken(userDetails, securityProperties.getMerchantAccessTokenExpirationMs());
+    }
+
+    private String generateToken(MarketplaceUserDetails userDetails, long ttlMs) {
         var now = new Date();
-        var expiry = new Date(now.getTime() + securityProperties.getJwtExpirationMs());
+        var expiry = new Date(now.getTime() + ttlMs);
         return Jwts.builder()
                 .subject(userDetails.getEmail())
                 .claim("userId", userDetails.getId().toString())

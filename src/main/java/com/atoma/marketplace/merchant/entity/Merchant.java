@@ -109,6 +109,17 @@ public class Merchant extends BaseEntity {
     @Column(length = 200)
     private String ownerFullName;
 
+    @Column(length = 200)
+    private String ownerFatherName;
+
+    @Column(length = 100)
+    private String ownerTazkiraNumber;
+
+    private java.time.LocalDate ownerDateOfBirth;
+
+    @Column(length = 100)
+    private String province;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
     private RepresentativeRole representativeRole;
@@ -135,6 +146,18 @@ public class Merchant extends BaseEntity {
     @Column(length = 100)
     private String bankAccountHint;
 
+    @Column(name = "payout_bank_id", length = 80)
+    private String payoutBankId;
+
+    @Column(name = "payout_wallet_provider_id", length = 80)
+    private String payoutWalletProviderId;
+
+    @Column(name = "payout_account_name", length = 200)
+    private String payoutAccountName;
+
+    @Column(name = "checks_updated_at")
+    private Instant checksUpdatedAt;
+
     private Instant fixByDeadline;
 
     private Instant reapplyAfter;
@@ -144,6 +167,11 @@ public class Merchant extends BaseEntity {
 
     @Column(length = 1000)
     private String suspensionReason;
+
+    @Column(length = 1000)
+    private String rejectionReason;
+
+    private java.time.LocalDate licenceExpiry;
 
     private Instant submittedAt;
 

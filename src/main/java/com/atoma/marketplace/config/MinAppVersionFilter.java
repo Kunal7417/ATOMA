@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 public class MinAppVersionFilter extends OncePerRequestFilter {
 
     private static final Pattern VERSION = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
+    private static final String API_PREFIX = "/api/v1/";
 
     private final AppVersionProperties appVersionProperties;
     private final ObjectMapper objectMapper;
@@ -36,16 +37,14 @@ public class MinAppVersionFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        if (!request.getRequestURI().startsWith(API_PREFIX)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         var clientVersion = request.getHeader("X-App-Version");
-        if (clientVersion == null || clientVersion.isBlank()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if (!VERSION.matcher(clientVersion.trim()).matches()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if (compareSemver(clientVersion.trim(), appVersionProperties.getMinMerchantVersion()) < 0) {
+        if (clientVersion == null || clientVersion.isBlank()
+                || !VERSION.matcher(clientVersion.trim()).matches()
+                || compareSemver(clientVersion.trim(), appVersionProperties.getMinMerchantVersion()) < 0) {
             writeUpgradeRequired(response);
             return;
         }

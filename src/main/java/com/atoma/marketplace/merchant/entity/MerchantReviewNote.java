@@ -29,6 +29,12 @@ public class MerchantReviewNote extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String fieldKey;
 
+    @Column(name = "step_key", length = 40)
+    private String stepKey;
+
+    @Column(name = "note_title_key", length = 80)
+    private String noteTitleKey;
+
     @Column(nullable = false, length = 1000)
     private String message;
 

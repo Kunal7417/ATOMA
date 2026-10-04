@@ -302,7 +302,7 @@ public class MerchantOnboardingService {
             throw MarketplaceException.badRequest("Payout step payload required");
         }
         merchant.setPayoutMethod(payout.payoutMethod());
-        if (payout.payoutMethod() == PayoutMethod.BANK_ACCOUNT
+        if (payout.payoutMethod() == PayoutMethod.BANK
                 && (payout.bankAccountHint() == null || payout.bankAccountHint().isBlank())) {
             throw MarketplaceException.badRequest("Bank account hint required for bank payout");
         }

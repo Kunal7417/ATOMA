@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +41,11 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         var fields = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a));
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        fe -> toFieldErrorCode(fe.getDefaultMessage()),
+                        (a, b) -> a
+                ));
         return buildResponse(
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 ErrorCodes.VALIDATION_FAILED,
@@ -65,6 +71,46 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(),
+                null, null, null);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUpload(MaxUploadSizeExceededException ex) {
+        return buildResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                ErrorCodes.FILE_TOO_LARGE,
+                "File too large",
+                Map.of(),
+                null,
+                null
+        );
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMedia(HttpMediaTypeNotSupportedException ex) {
+        return buildResponse(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                ErrorCodes.UNSUPPORTED_MEDIA_TYPE,
+                "Unsupported media type",
+                Map.of(),
+                null,
+                null
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        if (ex.getMessage() != null && ex.getMessage().contains("payout method")) {
+            return buildResponse(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    ErrorCodes.VALIDATION_FAILED,
+                    "Validation failed",
+                    Map.of("fields", Map.of("method", "INVALID")),
+                    null,
+                    null
+            );
+        }
+        return buildResponse(HttpStatus.BAD_REQUEST, ErrorCodes.VALIDATION_FAILED, ex.getMessage(),
                 null, null, null);
     }
 
@@ -107,5 +153,15 @@ public class GlobalExceptionHandler {
                     .body(body);
         }
         return response;
+    }
+
+    private static String toFieldErrorCode(String message) {
+        if ("INVALID_FORMAT".equals(message)) {
+            return "INVALID_FORMAT";
+        }
+        if (message != null && (message.contains("must match") || message.contains("Afghan") || message.contains("phone"))) {
+            return "INVALID_FORMAT";
+        }
+        return message != null ? message : "INVALID";
     }
 }

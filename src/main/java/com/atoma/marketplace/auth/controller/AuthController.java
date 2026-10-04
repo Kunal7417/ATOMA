@@ -81,14 +81,15 @@ public class AuthController {
 
     @PostMapping("/refresh")
     @Operation(summary = "Refresh access token")
-    public MerchantAuthDtos.TokenPair refresh(@Valid @RequestBody MerchantAuthDtos.RefreshRequest request) {
+    public MerchantAuthDtos.RefreshTokenResponse refresh(@Valid @RequestBody MerchantAuthDtos.RefreshRequest request) {
         var bundle = refreshTokenService.refresh(request.refreshToken());
-        return MerchantAuthDtos.TokenPair.builder()
+        var tokens = MerchantAuthDtos.TokenPair.builder()
                 .accessToken(bundle.accessToken())
                 .refreshToken(bundle.refreshToken())
                 .tokenType("Bearer")
                 .expiresIn(bundle.accessExpiresInSeconds())
                 .build();
+        return MerchantAuthDtos.RefreshTokenResponse.builder().tokens(tokens).build();
     }
 
     @PostMapping("/logout")

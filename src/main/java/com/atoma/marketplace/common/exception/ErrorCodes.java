@@ -18,5 +18,7 @@ public final class ErrorCodes {
     public static final String VERSION_CONFLICT = "VERSION_CONFLICT";
     public static final String APPLICATION_LOCKED = "APPLICATION_LOCKED";
     public static final String APP_UPDATE_REQUIRED = "APP_UPDATE_REQUIRED";
+    public static final String FILE_TOO_LARGE = "FILE_TOO_LARGE";
+    public static final String UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE";
     public static final String INTERNAL_ERROR = "INTERNAL_ERROR";
 }

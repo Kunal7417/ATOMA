@@ -1,5 +1,7 @@
 package com.atoma.marketplace.auth.security;
 
+import com.atoma.marketplace.common.exception.ErrorCodes;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +19,8 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    public static final String ERROR_CODE_ATTR = "atoma.auth.errorCode";
 
     private final JwtTokenProvider jwtTokenProvider;
     private final MarketplaceUserDetailsService userDetailsService;
@@ -45,7 +49,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (Exception ignored) {
+        } catch (ExpiredJwtException ex) {
+            request.setAttribute(ERROR_CODE_ATTR, ErrorCodes.TOKEN_EXPIRED);
+            SecurityContextHolder.clearContext();
+        } catch (Exception ex) {
             SecurityContextHolder.clearContext();
         }
 

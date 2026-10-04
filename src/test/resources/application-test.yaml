@@ -19,3 +19,5 @@ atoma:
     expose-code: true
     dev-bypass-code: "000000"
     resend-cooldown-seconds: 0
+  app:
+    enforce-version-header: false

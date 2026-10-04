@@ -5,11 +5,15 @@ import com.atoma.marketplace.auth.entity.User;
 import com.atoma.marketplace.auth.otp.OtpChallenge;
 import com.atoma.marketplace.auth.otp.OtpChallengeStore;
 import com.atoma.marketplace.auth.repository.UserRepository;
+import com.atoma.marketplace.common.enums.ApplicationWorkflowStatus;
+import com.atoma.marketplace.common.enums.MerchantStatus;
 import com.atoma.marketplace.common.enums.OtpDeliveryChannel;
 import com.atoma.marketplace.common.enums.UserRole;
 import com.atoma.marketplace.common.enums.UserStatus;
 import com.atoma.marketplace.common.exception.ErrorCodes;
 import com.atoma.marketplace.common.exception.MarketplaceException;
+import com.atoma.marketplace.auth.validation.AfghanMobilePhoneValidator;
+import com.atoma.marketplace.config.OtpExposeCodePolicy;
 import com.atoma.marketplace.config.OtpProperties;
 import com.atoma.marketplace.merchant.entity.Merchant;
 import com.atoma.marketplace.merchant.repository.MerchantRepository;
@@ -22,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,6 +43,7 @@ public class MerchantOtpService {
     private final MerchantRepository merchantRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
+    private final OtpExposeCodePolicy otpExposeCodePolicy;
 
     public MerchantAuthDtos.OtpChallengeResponse requestCode(MerchantAuthDtos.OtpRequest request) {
         var destination = resolveDestination(request);
@@ -187,7 +193,7 @@ public class MerchantOtpService {
                 .codeLength(otpProperties.getLength())
                 .expiresIn((int) ttl.getSeconds())
                 .resendAfter(otpProperties.getResendCooldownSeconds());
-        if (otpProperties.isExposeCode()) {
+        if (otpProperties.isExposeCode() && otpExposeCodePolicy.includeDevCodeInResponse()) {
             builder.devCode(code);
         }
         return builder.build();
@@ -263,11 +269,16 @@ public class MerchantOtpService {
     }
 
     private String normalizePhone(String raw) {
-        var trimmed = raw.trim();
-        if (trimmed.startsWith("+")) {
-            return trimmed;
+        var normalized = AfghanMobilePhoneValidator.normalize(raw);
+        if (!normalized.matches("^\\+937\\d{8}$")) {
+            throw MarketplaceException.withDetails(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    ErrorCodes.VALIDATION_FAILED,
+                    "Validation failed",
+                    Map.of("fields", Map.of("phone", "INVALID_FORMAT"))
+            );
         }
-        return "+93" + trimmed.replaceAll("\\s", "");
+        return normalized;
     }
 
     private String generateCode() {
@@ -301,13 +312,18 @@ public class MerchantOtpService {
     }
 
     private MerchantAuthDtos.MerchantSummary toMerchantSummary(Merchant merchant) {
+        var workflow = merchant.getApplicationWorkflowStatus() != null
+                ? merchant.getApplicationWorkflowStatus().name()
+                : null;
+        var displayStatus = merchant.getStatus() == MerchantStatus.DRAFT
+                || merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.DRAFT
+                ? "ONBOARDING"
+                : merchant.getStatus().name();
         return MerchantAuthDtos.MerchantSummary.builder()
                 .id(merchant.getId())
-                .businessName(merchant.getBusinessName())
-                .status(merchant.getStatus() != null ? merchant.getStatus().name() : null)
-                .workflowStatus(merchant.getApplicationWorkflowStatus() != null
-                        ? merchant.getApplicationWorkflowStatus().name()
-                        : null)
+                .name(merchant.getBusinessName())
+                .status(displayStatus)
+                .workflowStatus(workflow)
                 .build();
     }
 
@@ -315,14 +331,28 @@ public class MerchantOtpService {
         if (merchant == null) {
             return "ONBOARDING_BUSINESS";
         }
-        if (merchant.getApplicationWorkflowStatus() == null
-                || merchant.getCurrentWizardStep() < 1
-                || merchant.getBusinessType() == null) {
-            return "ONBOARDING_BUSINESS";
-        }
-        if (merchant.getSubmittedAt() != null) {
+        if (merchant.getSubmittedAt() != null
+                || merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.SUBMITTED
+                || merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.UNDER_REVIEW
+                || merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.NEEDS_UPDATE
+                || merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.REJECTED) {
             return "APPLICATION_STATUS";
         }
-        return "ONBOARDING_CONTINUE";
+        if (merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.APPROVED
+                && merchant.getStatus() == MerchantStatus.VERIFIED) {
+            return "DASHBOARD";
+        }
+        if (merchant.getApplicationWorkflowStatus() == ApplicationWorkflowStatus.SUSPENDED) {
+            return "APPLICATION_STATUS";
+        }
+        return switch (Math.max(merchant.getCurrentWizardStep(), 1)) {
+            case 1 -> "ONBOARDING_BUSINESS";
+            case 2 -> "ONBOARDING_OWNER";
+            case 3 -> "ONBOARDING_DOCUMENTS";
+            case 4 -> "ONBOARDING_STORE_ADDRESS";
+            case 5 -> "ONBOARDING_PAYOUT";
+            case 6 -> "ONBOARDING_TERMS";
+            default -> "APPLICATION_STATUS";
+        };
     }
 }

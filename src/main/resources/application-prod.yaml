@@ -28,3 +28,14 @@ spring:
 logging:
   level:
     com.atoma.marketplace: INFO
+
+atoma:
+  otp:
+    expose-code: false
+    dev-bypass-code: ""
+    resend-cooldown-seconds: 60
+  app:
+    enforce-version-header: true
+  onboarding:
+    upload:
+      max-file-size-bytes: 10485760

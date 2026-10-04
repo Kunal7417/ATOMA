@@ -33,4 +33,4 @@ logging:
 
 atoma:
   otp:
-    expose-code: true
+    expose-code: false

@@ -1,6 +1,9 @@
 package com.atoma.marketplace.auth.dto;
 
 import com.atoma.marketplace.common.enums.OtpDeliveryChannel;
+import com.atoma.marketplace.auth.validation.AfghanMobilePhone;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -13,8 +16,8 @@ public class MerchantAuthDtos {
 
     public record OtpRequest(
             @NotNull OtpDeliveryChannel channel,
-            String phone,
-            String email
+            @AfghanMobilePhone String phone,
+            @Email String email
     ) {}
 
     public record OtpResendRequest(
@@ -55,6 +58,12 @@ public class MerchantAuthDtos {
 
     @Value
     @Builder
+    public static class RefreshTokenResponse {
+        TokenPair tokens;
+    }
+
+    @Value
+    @Builder
     public static class UserSummary {
         UUID id;
         String email;
@@ -66,7 +75,8 @@ public class MerchantAuthDtos {
     @Builder
     public static class MerchantSummary {
         UUID id;
-        String businessName;
+        @JsonProperty("name")
+        String name;
         String status;
         String workflowStatus;
     }
@@ -78,7 +88,13 @@ public class MerchantAuthDtos {
         UserSummary user;
         MerchantSummary merchant;
         String nextRoute;
+        @JsonProperty("isNewUser")
         boolean isNewUser;
+
+        @JsonProperty("newUser")
+        public boolean getNewUser() {
+            return isNewUser;
+        }
     }
 
     public record RefreshRequest(@NotBlank String refreshToken) {}

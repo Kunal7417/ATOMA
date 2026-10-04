@@ -33,7 +33,7 @@ public class RefreshTokenService {
     @Transactional
     public MerchantTokenBundle issueTokens(User user) {
         var details = new MarketplaceUserDetails(user);
-        var access = jwtTokenProvider.generateToken(details);
+        var access = jwtTokenProvider.generateMerchantAccessToken(details);
         var rawRefresh = UUID.randomUUID().toString() + "." + UUID.randomUUID();
         var hash = hash(rawRefresh);
         refreshTokenRepository.save(RefreshToken.builder()
@@ -44,7 +44,7 @@ public class RefreshTokenService {
         return new MerchantTokenBundle(
                 access,
                 rawRefresh,
-                securityProperties.getJwtExpirationMs() / 1000
+                securityProperties.getMerchantAccessTokenExpirationMs() / 1000
         );
     }
 

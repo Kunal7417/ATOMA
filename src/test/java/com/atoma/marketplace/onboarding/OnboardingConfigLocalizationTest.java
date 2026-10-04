@@ -33,18 +33,8 @@ class OnboardingConfigLocalizationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
-
     @Test
     void configLocalizedForDari() throws Exception {
-        categoryRepository.save(Category.builder()
-                .name("Food & Grocery")
-                .slug("food-grocery")
-                .active(true)
-                .sortOrder(1)
-                .build());
-
         var token = otpSignIn();
         var body = mockMvc.perform(get("/api/v1/onboarding/config")
                         .header("Authorization", "Bearer " + token)

@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
   application:
     name: atoma-marketplace
   profiles:
@@ -11,6 +15,7 @@ atoma:
   security:
     jwt-secret: ${JWT_SECRET:atoma-marketplace-dev-secret-key-min-256-bits-long!!}
     jwt-expiration-ms: 86400000
+    merchant-access-token-expiration-ms: 900000
   otp:
     expose-code: false
     dev-bypass-code: "000000"
@@ -19,7 +24,10 @@ atoma:
     max-wrong-attempts: 5
   app:
     min-merchant-version: "0.1.0"
-    enforce-version-header: false
+    enforce-version-header: true
+  onboarding:
+    upload:
+      max-file-size-bytes: 10485760
 
 springdoc:
   api-docs:
