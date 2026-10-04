@@ -1,6 +1,7 @@
 package com.atoma.marketplace.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -10,7 +11,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -25,8 +27,7 @@ public class GlobalExceptionHandler {
                 ex.getStatus(),
                 ex.getCode(),
                 ex.getMessage(),
-                request.getRequestURI(),
-                null,
+                ex.getDetails(),
                 ex.getRetryAfterSeconds(),
                 ex.getAttemptsRemaining()
         );
@@ -37,14 +38,13 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpServletRequest request
     ) {
-        var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+        var fields = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a));
         return buildResponse(
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 ErrorCodes.VALIDATION_FAILED,
                 "Validation failed",
-                request.getRequestURI(),
-                fieldErrors,
+                Map.of("fields", fields),
                 null,
                 null
         );
@@ -56,7 +56,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED, ex.getMessage(),
-                request.getRequestURI(), null, null, null);
+                null, null, null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -65,34 +65,47 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN", ex.getMessage(),
-                request.getRequestURI(), null, null, null);
+                null, null, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCodes.INTERNAL_ERROR, ex.getMessage(),
-                request.getRequestURI(), null, null, null);
+                null, null, null);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(
             HttpStatus status,
             String code,
             String message,
-            String path,
-            java.util.Map<String, String> fieldErrors,
+            Map<String, Object> extraDetails,
             Long retryAfter,
-            Integer attemptsRemaining
+            Integer attemptsLeft
     ) {
+        var details = new HashMap<String, Object>();
+        if (extraDetails != null) {
+            details.putAll(extraDetails);
+        }
+        if (retryAfter != null) {
+            details.put("retryAfter", retryAfter);
+        }
+        if (attemptsLeft != null) {
+            details.put("attemptsLeft", attemptsLeft);
+        }
+
         var body = ErrorResponse.builder()
-                .timestamp(Instant.now())
-                .status(status.value())
                 .code(code)
                 .message(message)
-                .path(path)
-                .fieldErrors(fieldErrors)
-                .retryAfter(retryAfter)
-                .attemptsRemaining(attemptsRemaining)
+                .details(details.isEmpty() ? Map.of() : Map.copyOf(details))
                 .build();
-        return ResponseEntity.status(status).body(body);
+
+        var response = ResponseEntity.status(status).body(body);
+        if (retryAfter != null
+                && (ErrorCodes.RESEND_TOO_SOON.equals(code) || ErrorCodes.RATE_LIMITED.equals(code))) {
+            return ResponseEntity.status(status)
+                    .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfter))
+                    .body(body);
+        }
+        return response;
     }
 }

@@ -134,7 +134,7 @@ public class MerchantOtpService {
             throw MarketplaceException.of(
                     HttpStatus.BAD_REQUEST,
                     ErrorCodes.OTP_INVALID,
-                    "Invalid verification code",
+                    "Invalid code",
                     null,
                     Math.max(remaining, 0)
             );

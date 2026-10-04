@@ -62,7 +62,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" },
+              { "key": "X-App-Version", "value": "0.1.0" },
               { "key": "Accept-Language", "value": "en" }
             ],
             "body": {
@@ -96,7 +96,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" }
+              { "key": "X-App-Version", "value": "0.1.0" }
             ],
             "body": {
               "mode": "raw",
@@ -129,7 +129,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" }
+              { "key": "X-App-Version", "value": "0.1.0" }
             ],
             "body": {
               "mode": "raw",
@@ -164,7 +164,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" }
+              { "key": "X-App-Version", "value": "0.1.0" }
             ],
             "body": {
               "mode": "raw",
@@ -248,7 +248,7 @@
             "header": [
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" },
+              { "key": "X-App-Version", "value": "0.1.0" },
               { "key": "Accept-Language", "value": "en" }
             ],
             "url": "{{baseUrl}}/api/v1/onboarding/config"
@@ -286,7 +286,7 @@
             "header": [
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" }
+              { "key": "X-App-Version", "value": "0.1.0" }
             ],
             "url": "{{baseUrl}}/api/v1/onboarding/application"
           }
@@ -313,7 +313,7 @@
               { "key": "Content-Type", "value": "application/json" },
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" }
+              { "key": "X-App-Version", "value": "0.1.0" }
             ],
             "body": {
               "mode": "raw",
@@ -356,7 +356,7 @@
               { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" },
               { "key": "X-Device-Id", "value": "postman-device-1" },
               { "key": "X-Platform", "value": "android" },
-              { "key": "X-App-Version", "value": "1.0.0" }
+              { "key": "X-App-Version", "value": "0.1.0" }
             ],
             "body": {
               "mode": "raw",

@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppVersionProperties {
 
     /** Minimum merchant app version (semver x.y.z). Requests with lower X-App-Version receive 426. */
-    private String minMerchantVersion = "1.0.0";
+    private String minMerchantVersion = "0.1.0";
     /** When false, skip version check (e.g. curl without header). */
     private boolean enforceVersionHeader = false;
 }

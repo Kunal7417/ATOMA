@@ -18,7 +18,7 @@ atoma:
     ttl-minutes: 5
     max-wrong-attempts: 5
   app:
-    min-merchant-version: "1.0.0"
+    min-merchant-version: "0.1.0"
     enforce-version-header: false
 
 springdoc:

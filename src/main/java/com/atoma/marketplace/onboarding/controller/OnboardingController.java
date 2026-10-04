@@ -1,5 +1,6 @@
 package com.atoma.marketplace.onboarding.controller;
 
+import com.atoma.marketplace.common.i18n.MerchantAppLanguage;
 import com.atoma.marketplace.onboarding.dto.OnboardingApiDtos;
 import com.atoma.marketplace.onboarding.service.MerchantOnboardingApiService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,9 +29,11 @@ public class OnboardingController {
     @GetMapping("/config")
     @Operation(summary = "Onboarding metadata (business types, categories, steps)")
     public ResponseEntity<OnboardingApiDtos.ConfigResponse> config(
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, defaultValue = "en") String acceptLanguage,
             @RequestHeader(value = HttpHeaders.IF_NONE_MATCH, required = false) String ifNoneMatch
     ) {
-        var config = onboardingApiService.getConfig();
+        var language = MerchantAppLanguage.fromAcceptLanguageHeader(acceptLanguage);
+        var config = onboardingApiService.getConfig(language);
         var etag = onboardingApiService.configEtag(config);
         if (etag.equals(ifNoneMatch)) {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED).eTag(etag).build();

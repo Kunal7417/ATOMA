@@ -8,10 +8,12 @@ import com.atoma.marketplace.common.enums.KycStatus;
 import com.atoma.marketplace.common.enums.MerchantStatus;
 import com.atoma.marketplace.common.exception.ErrorCodes;
 import com.atoma.marketplace.common.exception.MarketplaceException;
+import com.atoma.marketplace.common.i18n.MerchantAppLanguage;
 import com.atoma.marketplace.merchant.entity.Merchant;
 import com.atoma.marketplace.merchant.repository.MerchantRepository;
 import com.atoma.marketplace.onboarding.dto.OnboardingApiDtos;
 import com.atoma.marketplace.onboarding.entity.IdempotencyRecord;
+import com.atoma.marketplace.onboarding.i18n.OnboardingLocalization;
 import com.atoma.marketplace.onboarding.repository.IdempotencyRecordRepository;
 import com.atoma.marketplace.product.entity.Category;
 import com.atoma.marketplace.product.repository.CategoryRepository;
@@ -46,32 +48,33 @@ public class MerchantOnboardingApiService {
     private final SecurityUtils securityUtils;
     private final IdempotencyRecordRepository idempotencyRecordRepository;
     private final ObjectMapper objectMapper;
+    private final OnboardingLocalization onboardingLocalization;
 
     @Transactional(readOnly = true)
-    public OnboardingApiDtos.ConfigResponse getConfig() {
+    public OnboardingApiDtos.ConfigResponse getConfig(MerchantAppLanguage language) {
         var categories = categoryRepository.findAll().stream()
                 .filter(Category::isActive)
                 .map(c -> OnboardingApiDtos.CategoryOption.builder()
                         .id(c.getId())
-                        .name(c.getName())
+                        .name(onboardingLocalization.categoryName(c.getName(), language))
                         .build())
                 .toList();
         var businessTypes = java.util.Arrays.stream(BusinessType.values())
                 .map(bt -> OnboardingApiDtos.BusinessTypeOption.builder()
                         .value(bt.name())
-                        .label(formatLabel(bt.name()))
+                        .label(onboardingLocalization.businessTypeLabel(bt, language))
                         .build())
                 .toList();
         return OnboardingApiDtos.ConfigResponse.builder()
                 .businessTypes(businessTypes)
                 .categories(categories)
                 .steps(List.of(
-                        step(1, "BUSINESS", "Business details"),
-                        step(2, "OWNER", "Owner / representative"),
-                        step(3, "DOCUMENTS", "Documents"),
-                        step(4, "STORE_ADDRESS", "Store address"),
-                        step(5, "PAYOUT", "Payout"),
-                        step(6, "TERMS", "Terms & consent")
+                        step(1, "BUSINESS", language, "Business details"),
+                        step(2, "OWNER", language, "Owner / representative"),
+                        step(3, "DOCUMENTS", language, "Documents"),
+                        step(4, "STORE_ADDRESS", language, "Store address"),
+                        step(5, "PAYOUT", language, "Payout"),
+                        step(6, "TERMS", language, "Terms & consent")
                 ))
                 .fieldRules(Map.of(
                         "businessName", rule(2, 200, true),
@@ -176,12 +179,11 @@ public class MerchantOnboardingApiService {
 
     private void assertVersion(Merchant merchant, long expectedVersion) {
         if (merchant.getApplicationVersion() != expectedVersion) {
-            throw MarketplaceException.of(
+            throw MarketplaceException.withDetails(
                     HttpStatus.CONFLICT,
                     ErrorCodes.VERSION_CONFLICT,
                     "Application version conflict",
-                    null,
-                    null
+                    Map.of("currentVersion", merchant.getApplicationVersion())
             );
         }
     }
@@ -269,8 +271,12 @@ public class MerchantOnboardingApiService {
                 .build();
     }
 
-    private static OnboardingApiDtos.StepDefinition step(int n, String key, String title) {
-        return OnboardingApiDtos.StepDefinition.builder().step(n).key(key).title(title).build();
+    private OnboardingApiDtos.StepDefinition step(int n, String key, MerchantAppLanguage language, String englishTitle) {
+        return OnboardingApiDtos.StepDefinition.builder()
+                .step(n)
+                .key(key)
+                .title(onboardingLocalization.stepTitle(key, language, englishTitle))
+                .build();
     }
 
     private static OnboardingApiDtos.FieldRule rule(int min, int max, boolean required) {
@@ -279,9 +285,5 @@ public class MerchantOnboardingApiService {
                 .maxLength(max)
                 .required(required)
                 .build();
-    }
-
-    private static String formatLabel(String enumName) {
-        return enumName.replace('_', ' ');
     }
 }

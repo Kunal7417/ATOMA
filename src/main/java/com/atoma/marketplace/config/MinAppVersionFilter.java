@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Component
@@ -46,21 +46,19 @@ public class MinAppVersionFilter extends OncePerRequestFilter {
             return;
         }
         if (compareSemver(clientVersion.trim(), appVersionProperties.getMinMerchantVersion()) < 0) {
-            writeUpgradeRequired(response, request.getRequestURI());
+            writeUpgradeRequired(response);
             return;
         }
         filterChain.doFilter(request, response);
     }
 
-    private void writeUpgradeRequired(HttpServletResponse response, String path) throws IOException {
+    private void writeUpgradeRequired(HttpServletResponse response) throws IOException {
         response.setStatus(HttpStatus.UPGRADE_REQUIRED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         var body = ErrorResponse.builder()
-                .timestamp(Instant.now())
-                .status(HttpStatus.UPGRADE_REQUIRED.value())
                 .code(ErrorCodes.APP_UPDATE_REQUIRED)
                 .message("App update required")
-                .path(path)
+                .details(Map.of("minVersion", appVersionProperties.getMinMerchantVersion()))
                 .build();
         objectMapper.writeValue(response.getOutputStream(), body);
     }
