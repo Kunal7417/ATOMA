@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:18.4
     container_name: atoma-postgres
     environment:
       POSTGRES_DB: atoma_marketplace
@@ -18,17 +18,92 @@ services:
       start_period: 10s
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.6.5
     container_name: atoma-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   rabbitmq:
-    image: rabbitmq:3.12-management-alpine
+    image: rabbitmq:4.3.4-management
     container_name: atoma-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: atoma-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-atoma}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-atoma-secret-key}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  marketplace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atoma-marketplace
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: atoma_marketplace
+      DB_USER: atoma
+      DB_PASSWORD: atoma
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-atoma}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-atoma-secret-key}
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: atoma-gateway
+    environment:
+      MARKETPLACE_URI: http://marketplace:8090
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - marketplace
+      - redis
 
 volumes:
   postgres_data:
+  minio_data:

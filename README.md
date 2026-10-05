@@ -7,19 +7,29 @@ Spring Boot monolithic backend for the ATOMA Pay Marketplace — a multi-surface
 | Layer | Components |
 |-------|------------|
 | **Client Surfaces** | Merchant Mobile, Merchant Web, Admin Portal, Customer Website, Customer Mobile |
-| **API Gateway** | JWT authentication, rate limiting (via Spring Security) |
+| **API Gateway** | Spring Cloud Gateway 5 (Oakwood 2025.1.2) | Routing, Redis rate limiting, circuit breakers |
 | **Core Modules** | Auth, Product, Order, Payment |
 | **Business Services** | Merchant, Search, Analytics, Notification, Compliance |
 | **Data Layer** | PostgreSQL, Redis, RabbitMQ, S3-compatible object storage |
 
 ## Technology Stack
 
-- **Java 17** + **Spring Boot 3.4**
-- **PostgreSQL 15** (primary database)
-- **Redis 7** (caching)
-- **RabbitMQ 3.12** (async events)
-- **JWT** (unified authentication across all surfaces)
-- **OpenAPI / Swagger UI** (API documentation)
+| Layer | Technology | Role |
+|-------|------------|------|
+| **Backend runtime** | Java 21 (LTS), Spring Boot 4.1.0 | Core application server |
+| **Web framework** | Spring Web MVC, Spring Security | REST APIs, JWT auth, RBAC |
+| **API Gateway** | Spring Cloud Gateway 5.0.2 | Routing, rate limiting, circuit breakers |
+| **Persistence** | Spring Data JPA, Flyway | ORM and schema migrations |
+| **Primary database** | PostgreSQL 18.4 | Transactional data |
+| **Cache** | Redis 8.6.5 | Caching, gateway rate limits |
+| **Message queue** | RabbitMQ 4.3.4 | Async notifications and events |
+| **Object storage** | MinIO (S3-compatible) | Product images, KYC documents |
+| **API documentation** | OpenAPI 3 / springdoc 3.1.1 | `/swagger-ui.html` |
+| **Health monitoring** | Spring Actuator | `/actuator/health`, metrics |
+| **Operating system** | Ubuntu 26.04 LTS | Container base image |
+| **Containerization** | Docker Compose (dev) | PostgreSQL, Redis, RabbitMQ, MinIO, gateway |
+
+- **JWT** — unified authentication across all surfaces
 
 ## Project Structure
 
@@ -43,7 +53,7 @@ src/main/java/com/atoma/marketplace/
 
 ### Prerequisites
 
-- JDK 17+
+- **JDK 21** (LTS)
 - Gradle (wrapper included)
 
 ### Merchant sign-in & onboarding (mobile 9 steps)
@@ -77,9 +87,11 @@ Credentials and database name match `docker-compose.yml` and `.env.example`.
 **Option A — Docker (recommended)**
 
 ```bash
-docker compose up -d postgres          # database only
-# optional: docker compose up -d       # postgres + redis + rabbitmq
-./gradlew bootRun -Pprofile=local
+docker compose up -d postgres redis rabbitmq minio   # infrastructure
+./gradlew bootRun -Pprofile=local                     # API on :8090
+./gradlew :gateway:bootRun                           # gateway on :8080 → marketplace
+# or full stack in containers:
+docker compose up -d --build
 ```
 
 **Option B — PostgreSQL installed on the host**

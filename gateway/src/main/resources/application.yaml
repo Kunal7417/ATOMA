@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: atoma-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: marketplace-api
+              uri: ${MARKETPLACE_URI:http://localhost:8090}
+              predicates:
+                - Path=/api/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 100
+                    redis-rate-limiter.burstCapacity: 200
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@deviceIdKeyResolver}"
+                - name: CircuitBreaker
+                  args:
+                    name: marketplace
+                    fallbackUri: forward:/fallback
+            - id: marketplace-actuator
+              uri: ${MARKETPLACE_URI:http://localhost:8090}
+              predicates:
+                - Path=/actuator/**
+            - id: marketplace-swagger
+              uri: ${MARKETPLACE_URI:http://localhost:8090}
+              predicates:
+                - Path=/swagger-ui/**,/v3/api-docs/**
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: when_authorized
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      marketplace:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+
+atoma:
+  gateway:
+    fallback-message: Marketplace service temporarily unavailable

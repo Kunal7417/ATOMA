@@ -133,18 +133,20 @@ flowchart TB
 
 | Layer | Technology | Role |
 |-------|------------|------|
-| **Backend runtime** | Java 17, Spring Boot 3.4 | Core application server |
-| **Web framework** | Spring Web, Spring Security | REST APIs, JWT auth, RBAC |
+| **Backend runtime** | Java 21 (LTS), Spring Boot 4.1.0 | Core application server |
+| **Web framework** | Spring Web MVC, Spring Security | REST APIs, JWT auth, RBAC |
+| **API Gateway** | Spring Cloud Gateway 5.0.2 (Spring Cloud 2025.1.2) | Routing, rate limiting, circuit breakers, edge protection |
 | **Persistence** | Spring Data JPA, Flyway | ORM and schema migrations |
-| **Primary database** | PostgreSQL 15 | Transactional data (users, products, orders, payments) |
-| **Cache** | Redis 7 | Search result caching, session/rate-limit support (configured) |
-| **Message queue** | RabbitMQ 3.12 | Async notifications and event processing (configured) |
-| **Object storage** | MinIO / S3-compatible | Product images, KYC documents (planned) |
-| **API documentation** | OpenAPI 3 / Swagger UI | Interactive API docs at `/swagger-ui.html` |
+| **Primary database** | PostgreSQL 18.4 | Transactional data (users, products, orders, payments) |
+| **Cache** | Redis 8.6.5 | Search result caching, session/rate-limit support |
+| **Message queue** | RabbitMQ 4.3.4 | Async notifications and event processing |
+| **Object storage** | MinIO / S3-compatible | Product images, KYC documents |
+| **API documentation** | OpenAPI 3 / Swagger UI (springdoc 3.1.1) | Interactive API docs at `/swagger-ui.html` |
 | **Health monitoring** | Spring Actuator | `/actuator/health`, metrics |
+| **Operating system** | Ubuntu 26.04 LTS | Backend container base |
 | **Mobile clients** | React Native 0.73+ | Merchant and Customer mobile apps (planned) |
 | **Web clients** | React.js 18+ | Merchant Web, Admin, Customer Website (planned) |
-| **Containerization** | Docker Compose (dev) | Local PostgreSQL, Redis, RabbitMQ |
+| **Containerization** | Docker Compose (dev) | Local PostgreSQL, Redis, RabbitMQ, MinIO, gateway |
 
 ---
 

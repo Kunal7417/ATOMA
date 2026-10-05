@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -150,20 +151,17 @@ public class OnboardingApiDtos {
         private String businessName;
         @JsonIgnore
         private boolean primaryCategorySpecified;
+        @Getter
+        @Setter(AccessLevel.NONE)
         private UUID primaryCategoryId;
 
         @JsonProperty("primaryCategoryId")
-        public void setPrimaryCategoryIdFromJson(com.fasterxml.jackson.databind.JsonNode node) {
+        public void bindPrimaryCategory(String raw) {
             primaryCategorySpecified = true;
-            if (node == null || node.isNull()) {
-                primaryCategoryId = null;
-                return;
-            }
-            var text = node.asText(null);
-            if (text == null || text.isBlank()) {
+            if (raw == null || raw.isBlank()) {
                 primaryCategoryId = null;
             } else {
-                primaryCategoryId = UUID.fromString(text.trim());
+                primaryCategoryId = UUID.fromString(raw.trim());
             }
         }
 

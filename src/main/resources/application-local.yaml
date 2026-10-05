@@ -41,6 +41,13 @@ spring:
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
 
+atoma:
+  storage:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:atoma}
+    secret-key: ${MINIO_SECRET_KEY:atoma-secret-key}
+    bucket: ${MINIO_BUCKET:atoma-marketplace}
+
 logging:
   level:
     com.atoma.marketplace: DEBUG
